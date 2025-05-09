@@ -341,6 +341,51 @@ export type PLAYLIST_BY_SLUG_QUERYResult = {
     pitch: null;
   }> | null;
 } | null;
+// Variable: SERVICES_QUERY
+// Query: *[  _type == "service" && defined(slug.current) &&   (!defined($search) || title match $search || category match $search || provider->name match $search)] | order(_createdAt desc) {  _id,   title,   slug,  _createdAt,  provider -> {    _id, name, image, bio  },   views,  description,  category,  image,  priceRange,  // Added price range for services}
+export type SERVICES_QUERYResult = Array<never>;
+// Variable: SERVICE_BY_ID_QUERY
+// Query: *[  _type == "service" && _id == $id][0]{  _id,   title,   slug,  _createdAt,  provider -> {    _id, name, username, image, bio  },   views,  description,  category,  image,  priceRange,  // Added price range for service  details,     // Replaced 'pitch' with 'details' for more service-oriented description}
+export type SERVICE_BY_ID_QUERYResult = null;
+// Variable: SERVICE_VIEWS_QUERY
+// Query: *[  _type == "service" && _id == $id][0]{  _id, views}
+export type SERVICE_VIEWS_QUERYResult = null;
+// Variable: PROVIDER_BY_ID_QUERY
+// Query: *[  _type == "provider" && _id == $id  // Adjusted _type to "provider" for service providers][0]{  _id,  name,  username,  email,  image,  bio}
+export type PROVIDER_BY_ID_QUERYResult = null;
+// Variable: SERVICES_BY_PROVIDER_QUERY
+// Query: *[  _type == "service" && provider._ref == $id  // Adjusted to reference provider for services] | order(_createdAt desc) {  _id,   title,   slug,  _createdAt,  provider -> {    _id, name, image, bio  },   views,  description,  category,  image,  priceRange,}
+export type SERVICES_BY_PROVIDER_QUERYResult = Array<never>;
+// Variable: FEATURED_SERVICES_QUERY
+// Query: *[  _type == "playlist" && slug.current == $slug][0]{  _id,  title,  slug,  select[]->{    _id,    _createdAt,    title,    slug,    provider->{      _id,      name,      slug,      image,      bio    },    views,    description,    category,    image,    details  // Replaced 'pitch' with 'details'  }}
+export type FEATURED_SERVICES_QUERYResult = {
+  _id: string;
+  title: string | null;
+  slug: Slug | null;
+  select: Array<{
+    _id: string;
+    _createdAt: string;
+    title: string | null;
+    slug: Slug | null;
+    provider: null;
+    views: number | null;
+    description: string | null;
+    category: string | null;
+    image: {
+      asset?: {
+        _ref: string;
+        _type: "reference";
+        _weak?: boolean;
+        [internalGroqTypeReferenceTo]?: "sanity.imageAsset";
+      };
+      media?: unknown;
+      hotspot?: SanityImageHotspot;
+      crop?: SanityImageCrop;
+      _type: "image";
+    } | null;
+    details: null;
+  }> | null;
+} | null;
 
 // Query TypeMap
 import "@sanity/client";
@@ -352,5 +397,11 @@ declare module "@sanity/client" {
     "*[\n  _type == \"author\" && _id == $id\n][0]{\n  _id,\n  id,\n  name,\n  username,\n  email,\n  image,\n  bio\n}": AUTHOR_BY_ID_QUERYResult;
     "*[\n  _type == \"startup\" && author._ref == $id\n] | order(_createdAt desc) {\n  _id, \n  title, \n  slug,\n  _createdAt,\n  author -> {\n    _id, name, image, bio\n  }, \n  views,\n  description,\n  category,\n  image,\n}": STARTUPS_BY_AUTHOR_QUERYResult;
     "*[\n  _type == \"playlist\" && slug.current == $slug\n][0]{\n  _id,\n  title,\n  slug,\n  select[]->{\n    _id,\n    _createdAt,\n    title,\n    slug,\n    author->{\n      _id,\n      name,\n      slug,\n      image,\n      bio\n    },\n    views,\n    description,\n    category,\n    image,\n    pitch\n  }\n}": PLAYLIST_BY_SLUG_QUERYResult;
+    "*[\n  _type == \"service\" && defined(slug.current) && \n  (!defined($search) || title match $search || category match $search || provider->name match $search)\n] | order(_createdAt desc) {\n  _id, \n  title, \n  slug,\n  _createdAt,\n  provider -> {\n    _id, name, image, bio\n  }, \n  views,\n  description,\n  category,\n  image,\n  priceRange,  // Added price range for services\n}": SERVICES_QUERYResult;
+    "*[\n  _type == \"service\" && _id == $id\n][0]{\n  _id, \n  title, \n  slug,\n  _createdAt,\n  provider -> {\n    _id, name, username, image, bio\n  }, \n  views,\n  description,\n  category,\n  image,\n  priceRange,  // Added price range for service\n  details,     // Replaced 'pitch' with 'details' for more service-oriented description\n}": SERVICE_BY_ID_QUERYResult;
+    "*[\n  _type == \"service\" && _id == $id\n][0]{\n  _id, views\n}": SERVICE_VIEWS_QUERYResult;
+    "*[\n  _type == \"provider\" && _id == $id  // Adjusted _type to \"provider\" for service providers\n][0]{\n  _id,\n  name,\n  username,\n  email,\n  image,\n  bio\n}": PROVIDER_BY_ID_QUERYResult;
+    "*[\n  _type == \"service\" && provider._ref == $id  // Adjusted to reference provider for services\n] | order(_createdAt desc) {\n  _id, \n  title, \n  slug,\n  _createdAt,\n  provider -> {\n    _id, name, image, bio\n  }, \n  views,\n  description,\n  category,\n  image,\n  priceRange,\n}": SERVICES_BY_PROVIDER_QUERYResult;
+    "*[\n  _type == \"playlist\" && slug.current == $slug\n][0]{\n  _id,\n  title,\n  slug,\n  select[]->{\n    _id,\n    _createdAt,\n    title,\n    slug,\n    provider->{\n      _id,\n      name,\n      slug,\n      image,\n      bio\n    },\n    views,\n    description,\n    category,\n    image,\n    details  // Replaced 'pitch' with 'details'\n  }\n}": FEATURED_SERVICES_QUERYResult;
   }
 }

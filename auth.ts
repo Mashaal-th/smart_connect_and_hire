@@ -27,6 +27,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }) {
       const { id, login, bio } = profile;
       const { name, email, image } = user;
+      
+      console.log("[signIn] GitHub profile id:", id);
 
       const existingUser = await client
         .withConfig({ useCdn: false })
@@ -57,9 +59,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       profile?: GitHubProfile;
     }) {
       if (account && profile) {
-        const user = await client.fetch(AUTHOR_BY_ID_QUERY, { id: profile.id });
-
-        token.id = user?._id;
+        console.log("[jwt] GitHub profile id:", profile.id);
+        
+        try {
+          const user = await client.fetch(AUTHOR_BY_ID_QUERY, { id: profile.id });
+          console.log("[jwt] User from Sanity:", user);
+          
+          // Check if user exists and has an _id
+          if (user && user._id) {
+            token.id = user._id;
+          } else {
+            // Fallback to using the GitHub profile ID directly
+            console.log("[jwt] No Sanity _id found, using GitHub profile id");
+            token.id = profile.id;
+          }
+        } catch (error) {
+          console.error("[jwt] Error fetching user from Sanity:", error);
+          // Fallback to using the GitHub profile ID
+          token.id = profile.id;
+        }
+        
+        console.log("[jwt] Updated token:", token);
       }
 
       return token;
@@ -72,7 +92,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       session: any;
       token: any;
     }) {
-      Object.assign(session, { id: token.id });
+      console.log("[session] Token received:", token);
+      console.log("[session] Session before:", session);
+      
+      // First check if token.id exists
+      const userId = token.id || token.sub;
+      
+      // Add ID to both places for maximum compatibility
+      if (session.user) {
+        session.user.id = userId;
+      }
+      
+      // Also set at the root level
+      session.id = userId;
+      
+      console.log("[session] Session after:", session);
       return session;
     },
   },

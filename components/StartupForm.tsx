@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useActionState } from "react";
@@ -13,16 +12,15 @@ import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { createPitch } from "@/lib/actions";
 
-
 const StartupForm = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [pitch, setPitch] = useState("");
   const { toast } = useToast();
   const router = useRouter();
 
-  
-
   const handleFormSubmit = async (prevState: any, formData: FormData) => {
+    console.log("🚀 Submitting form...");
+
     try {
       const formValues = {
         title: formData.get("title") as string,
@@ -30,29 +28,35 @@ const StartupForm = () => {
         category: formData.get("category") as string,
         link: formData.get("link") as string,
         pitch,
+        priceMin: Number(formData.get("priceMin")),
+        priceMax: Number(formData.get("priceMax")),
       };
 
-      await formSchema.parseAsync(formValues);
+      console.log("📦 Form values:", formValues);
 
+      await formSchema.parseAsync(formValues);
+      console.log("✅ Validation passed");
 
       const result = await createPitch(prevState, formData, pitch);
+      console.log("📤 createPitch result:", result);
 
-      if (result.status == "SUCCESS") {
+      if (result.status === "SUCCESS") {
         toast({
           title: "Success",
           description: "Your service has been created successfully",
         });
 
+        console.log("➡️ Redirecting to:", `/startup/${result._id}`);
         router.push(`/startup/${result._id}`);
       }
 
       return result;
     } catch (error) {
-        if(error instanceof z.ZodError)
-       {
-        const fieldErorrs = error.flatten().fieldErrors;
+      if (error instanceof z.ZodError) {
+        const fieldErrors = error.flatten().fieldErrors;
+        console.error("❌ Validation errors:", fieldErrors);
 
-        setErrors(fieldErorrs as unknown as Record<string, string>);
+        setErrors(fieldErrors as unknown as Record<string, string>);
 
         toast({
           title: "Error",
@@ -62,6 +66,8 @@ const StartupForm = () => {
 
         return { ...prevState, error: "Validation failed", status: "ERROR" };
       }
+
+      console.error("🔥 Unexpected error during submission:", error);
 
       toast({
         title: "Error",
@@ -86,9 +92,7 @@ const StartupForm = () => {
   return (
     <form action={formAction} className="startup-form">
       <div>
-        <label htmlFor="title" className="startup-form_label">
-          Title
-        </label>
+        <label htmlFor="title" className="startup-form_label">Title</label>
         <Input
           id="title"
           name="title"
@@ -96,14 +100,11 @@ const StartupForm = () => {
           required
           placeholder="Service"
         />
-
         {errors.title && <p className="startup-form_error">{errors.title}</p>}
       </div>
 
       <div>
-        <label htmlFor="description" className="startup-form_label">
-          Description
-        </label>
+        <label htmlFor="description" className="startup-form_label">Description</label>
         <Textarea
           id="description"
           name="description"
@@ -111,16 +112,11 @@ const StartupForm = () => {
           required
           placeholder="Service Description"
         />
-
-        {errors.description && (
-          <p className="startup-form_error">{errors.description}</p>
-        )}
+        {errors.description && <p className="startup-form_error">{errors.description}</p>}
       </div>
 
       <div>
-        <label htmlFor="category" className="startup-form_label">
-          Category
-        </label>
+        <label htmlFor="category" className="startup-form_label">Category</label>
         <Input
           id="category"
           name="category"
@@ -128,16 +124,39 @@ const StartupForm = () => {
           required
           placeholder="Service (Education, Delivery, Home...)"
         />
+        {errors.category && <p className="startup-form_error">{errors.category}</p>}
+      </div>
 
-        {errors.category && (
-          <p className="startup-form_error">{errors.category}</p>
+      <div>
+        <label className="startup-form_label">Price Range (TL)</label>
+        <div className="flex gap-4">
+          <Input
+            id="priceMin"
+            name="priceMin"
+            type="number"
+            min="0"
+            className="startup-form_input"
+            placeholder="Min"
+          />
+          <Input
+            id="priceMax"
+            name="priceMax"
+            type="number"
+            min="0"
+            className="startup-form_input"
+            required
+            placeholder="Max"
+          />
+        </div>
+        {(errors.priceMin || errors.priceMax) && (
+          <p className="startup-form_error">
+            {errors.priceMin || errors.priceMax}
+          </p>
         )}
       </div>
 
       <div>
-        <label htmlFor="link" className="startup-form_label">
-          Image URL
-        </label>
+        <label htmlFor="link" className="startup-form_label">Image URL</label>
         <Input
           id="link"
           name="link"
@@ -145,15 +164,11 @@ const StartupForm = () => {
           required
           placeholder="Image URL"
         />
-
         {errors.link && <p className="startup-form_error">{errors.link}</p>}
       </div>
 
       <div data-color-mode="light">
-        <label htmlFor="pitch" className="startup-form_label">
-          Pitch
-        </label>
-
+        <label htmlFor="pitch" className="startup-form_label">More Details</label>
         <MDEditor
           value={pitch}
           onChange={(value) => setPitch(value as string)}
@@ -162,14 +177,12 @@ const StartupForm = () => {
           height={300}
           style={{ borderRadius: 20, overflow: "hidden" }}
           textareaProps={{
-            placeholder:
-              "Briefly describe the service ",
+            placeholder: "Briefly describe the service",
           }}
           previewOptions={{
             disallowedElements: ["style"],
           }}
         />
-
         {errors.pitch && <p className="startup-form_error">{errors.pitch}</p>}
       </div>
 
